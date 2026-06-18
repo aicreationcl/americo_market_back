@@ -1,0 +1,10 @@
+// Runs BEFORE any module import (jest setupFiles) — sets env vars so config.ts Zod parse succeeds
+process.env.NODE_ENV = 'test'
+process.env.PORT = '3001'
+process.env.MONGODB_URI = 'mongodb://localhost:27017/americo_test'
+process.env.JWT_SECRET = 'test-jwt-secret-32-chars-minimum!!'
+process.env.JWT_REFRESH_SECRET = 'test-refresh-secret-32-chars-min!!'
+process.env.JWT_EXPIRES_IN = '15m'
+process.env.JWT_REFRESH_EXPIRES_IN = '7d'
+process.env.CORS_ORIGIN = 'http://localhost:5173'
+process.env.FREE_SHIPPING_THRESHOLD = '50000'
