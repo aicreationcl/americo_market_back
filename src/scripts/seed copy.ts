@@ -1,8 +1,13 @@
+import 'dotenv/config'
+import mongoose from 'mongoose'
 import bcrypt from 'bcryptjs'
+import { config } from '../config'
 import Category from '../models/Category'
 import Product from '../models/Product'
 import User from '../models/User'
 import ShippingZone from '../models/ShippingZone'
+
+const DROP = process.argv.includes('--drop')
 
 // ─── Categorías ───────────────────────────────────────────────────────────────
 const CATEGORIES = [
@@ -85,65 +90,50 @@ const COMMUNES = [
   { commune: 'Recoleta', cost: 2490 },
 ]
 
-export const seedDatabase = async (): Promise<void> => {
-  console.log('🌱 Iniciando seed...')
+async function seed() {
+  await mongoose.connect(config.MONGODB_URI)
+  console.log('✅ Conectado a MongoDB')
 
-  const categoriesCount = await Category.countDocuments()
-
-  if (categoriesCount > 0) {
-    console.log('🌱 Base de datos ya poblada. Seed omitido.')
-    return
+  if (DROP) {
+    await Promise.all([
+      Category.deleteMany({}),
+      Product.deleteMany({}),
+      User.deleteMany({}),
+      ShippingZone.deleteMany({}),
+    ])
+    console.log('🗑  Colecciones vaciadas')
   }
 
   // Categorías
   const cats = await Category.insertMany(CATEGORIES)
-
-  const catMap = Object.fromEntries(
-    cats.map((c) => [c.slug, String(c._id)])
-  )
-
+  const catMap = Object.fromEntries(cats.map((c) => [c.slug, String(c._id)]))
   console.log(`📦 ${cats.length} categorías creadas`)
 
   // Productos
   const products = buildProducts(catMap)
-
   await Product.insertMany(products)
-
   console.log(`🛒 ${products.length} productos creados`)
 
-  // Comunas
-  const zones = COMMUNES.map((c) => ({
-    ...c,
-    region: 'Región Metropolitana',
-    isAvailable: true
-  }))
-
+  // Comunas de envío
+  const zones = COMMUNES.map((c) => ({ ...c, region: 'Región Metropolitana', isAvailable: true }))
   await ShippingZone.insertMany(zones)
-
-  console.log(`🚚 ${zones.length} comunas creadas`)
+  console.log(`🚚 ${zones.length} comunas de envío creadas`)
 
   // Admin
-  const existingAdmin = await User.findOne({
-    email: 'admin@americo.cl'
+  const passwordHash = await bcrypt.hash('Admin1234!', 10)
+  await User.create({
+    name: 'Administrador AMERICO',
+    email: 'admin@americo.cl',
+    passwordHash,
+    role: 'admin',
   })
+  console.log('👤 Admin creado — admin@americo.cl / Admin1234!')
 
-  if (!existingAdmin) {
-    const passwordHash = await bcrypt.hash(
-      'Admin1234!',
-      10
-    )
-
-    await User.create({
-      name: 'Administrador AMERICO',
-      email: 'admin@americo.cl',
-      passwordHash,
-      role: 'admin'
-    })
-
-    console.log(
-      '👤 Admin creado — admin@americo.cl / Admin1234!'
-    )
-  }
-
-  console.log('✅ Seed completado')
+  await mongoose.disconnect()
+  console.log('\n✅ Seed completado exitosamente')
 }
+
+seed().catch((err) => {
+  console.error('❌ Error en seed:', err)
+  process.exit(1)
+})
