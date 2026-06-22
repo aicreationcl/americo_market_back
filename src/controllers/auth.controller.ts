@@ -36,7 +36,7 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
     success: true,
     data: {
       accessToken,
-      user: { id: user._id, name: user.name, email: user.email, role: user.role },
+      user: { _id: String(user._id), name: user.name, email: user.email, role: user.role, profileImage: user.profileImage || '' },
     },
   })
 })
@@ -61,7 +61,7 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
     success: true,
     data: {
       accessToken,
-      user: { id: user._id, name: user.name, email: user.email, role: user.role },
+      user: { _id: String(user._id), name: user.name, email: user.email, role: user.role, profileImage: user.profileImage || '' },
     },
   })
 })
@@ -113,10 +113,14 @@ export const getMe = asyncHandler(async (req: Request, res: Response) => {
 })
 
 export const updateMe = asyncHandler(async (req: Request, res: Response) => {
-  const { name, phone } = req.body as { name?: string; phone?: string }
+  const { name, phone, profileImage } = req.body as { name?: string; phone?: string; profileImage?: string }
+  const update: Record<string, unknown> = {}
+  if (name) update.name = name
+  if (phone !== undefined) update.phone = phone
+  if (profileImage !== undefined) update.profileImage = profileImage
   const user = await User.findByIdAndUpdate(
     req.user!.id,
-    { ...(name && { name }), ...(phone && { phone }) },
+    update,
     { new: true, runValidators: true }
   ).select('-passwordHash -refreshTokens')
   res.json({ success: true, data: user })

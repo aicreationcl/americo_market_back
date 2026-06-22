@@ -31,7 +31,7 @@ export const placeOrder = asyncHandler(async (req: Request, res: Response) => {
 export const getMyOrders = asyncHandler(async (req: Request, res: Response) => {
   const orders = await Order.find({ 'customer.userId': req.user!.id })
     .sort({ createdAt: -1 })
-    .select('orderNumber status total fulfillment.type createdAt')
+    .select('orderNumber status total subtotal shippingCost fulfillment customer items createdAt')
   res.json({ success: true, data: orders })
 })
 

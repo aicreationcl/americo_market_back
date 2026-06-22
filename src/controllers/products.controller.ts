@@ -60,8 +60,22 @@ export const getProductBySlug = asyncHandler(async (req: Request, res: Response)
   res.json({ success: true, data: product })
 })
 
+const generateSlug = (name: string): string =>
+  name
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '')
+
 export const createProduct = asyncHandler(async (req: Request, res: Response) => {
-  const product = await Product.create(req.body)
+  const body = { ...req.body }
+  if (!body.slug && body.name) {
+    const base = generateSlug(body.name)
+    const existing = await Product.findOne({ slug: base })
+    body.slug = existing ? `${base}-${Date.now().toString(36)}` : base
+  }
+  const product = await Product.create(body)
   res.status(201).json({ success: true, data: product })
 })
 

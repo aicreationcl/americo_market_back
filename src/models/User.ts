@@ -17,6 +17,7 @@ export interface IUser extends Document {
   passwordHash: string
   role: 'customer' | 'admin'
   phone: string
+  profileImage: string
   addresses: IAddress[]
   isActive: boolean
   emailVerified: boolean
@@ -43,6 +44,7 @@ const userSchema = new Schema<IUser>(
     passwordHash: { type: String, required: true },
     role: { type: String, enum: ['customer', 'admin'], default: 'customer' },
     phone: { type: String, default: '' },
+    profileImage: { type: String, default: '' },
     addresses: [addressSchema],
     isActive: { type: Boolean, default: true },
     emailVerified: { type: Boolean, default: false },

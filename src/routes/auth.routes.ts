@@ -1,27 +1,29 @@
-import { Router } from 'express'
+import { Router, Request, Response, NextFunction } from 'express'
+import rateLimit from 'express-rate-limit'
 import * as auth from '../controllers/auth.controller'
 import { authenticate } from '../middleware/auth.middleware'
 import { validate } from '../middleware/validate.middleware'
-import { z } from 'zod'
+import { RegisterSchema, LoginSchema, UpdateMeSchema } from '../schemas/auth.schema'
+import { config } from '../config'
 
 const router = Router()
 
-const registerSchema = z.object({
-  name: z.string().min(2),
-  email: z.string().email(),
-  password: z.string().min(6),
-})
+const authLimiter =
+  config.NODE_ENV === 'test'
+    ? (_req: Request, _res: Response, next: NextFunction) => next()
+    : rateLimit({
+        windowMs: 60 * 1000,
+        max: 10,
+        message: { success: false, message: 'Demasiados intentos. Intenta nuevamente en 1 minuto.' },
+        standardHeaders: true,
+        legacyHeaders: false,
+      })
 
-const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(1),
-})
-
-router.post('/register', validate(registerSchema), auth.register)
-router.post('/login', validate(loginSchema), auth.login)
+router.post('/register', authLimiter, validate(RegisterSchema), auth.register)
+router.post('/login', authLimiter, validate(LoginSchema), auth.login)
 router.post('/refresh', auth.refresh)
 router.post('/logout', authenticate, auth.logout)
 router.get('/me', authenticate, auth.getMe)
-router.patch('/me', authenticate, auth.updateMe)
+router.patch('/me', authenticate, validate(UpdateMeSchema), auth.updateMe)
 
 export default router
