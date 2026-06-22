@@ -10,7 +10,9 @@ import { config } from '../config'
 const COOKIE_OPTS = {
   httpOnly: true,
   secure: config.NODE_ENV === 'production',
-  sameSite: 'strict' as const,
+  // In production (Railway) frontend and backend are different subdomains → need 'none'
+  // In development both are localhost → 'strict' is fine
+  sameSite: (config.NODE_ENV === 'production' ? 'none' : 'strict') as 'none' | 'strict',
   maxAge: 7 * 24 * 60 * 60 * 1000,
 }
 
