@@ -31,7 +31,7 @@ export const createApp = (): Application => {
     `${API_PREFIX}/health`,
     (_req: Request, res: Response) => {
       res.status(200).json({
-        status: 'UP',
+        status: 'ok',
         service: 'Americo API',
         environment: config.NODE_ENV,
         timestamp: new Date().toISOString()

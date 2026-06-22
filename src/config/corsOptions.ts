@@ -1,9 +1,10 @@
 import { CorsOptions } from 'cors'
 
-const allowedOrigins = [
-  process.env.CORS_ORIGIN ?? 'http://localhost:5173',
-  'http://localhost:3000',
-]
+const envOrigins = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim())
+  : ['http://localhost:5173']
+
+const allowedOrigins = [...new Set([...envOrigins, 'http://localhost:3000', 'http://localhost:5173'])]
 
 export const corsOptions: CorsOptions = {
   origin: (origin, callback) => {
