@@ -6,9 +6,9 @@ const envSchema = z
       .enum(['development', 'production', 'test'])
       .default('development'),
 
-    USE_MEMORY_DB: z.coerce.boolean().default(false),
+    USE_MEMORY_DB: z.string().default('false').transform((v) => v === 'true'),
 
-    RUN_SEEDS: z.coerce.boolean().default(false),
+    RUN_SEEDS: z.string().default('false').transform((v) => v === 'true'),
 
     PORT: z.coerce.number().default(3001),
 
