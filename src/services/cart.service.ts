@@ -95,7 +95,14 @@ export const mergeGuestCart = async (sessionId: string, userId: string): Promise
     if (existing) {
       existing.quantity = Math.max(existing.quantity, guestItem.quantity)
     } else {
-      userCart.items.push({ ...guestItem })
+      userCart.items.push({
+        product: guestItem.product,
+        name: guestItem.name,
+        price: guestItem.price,
+        imageUrl: guestItem.imageUrl,
+        quantity: guestItem.quantity,
+        sku: guestItem.sku,
+      })
     }
   }
 
