@@ -83,6 +83,7 @@ const COMMUNES = [
   { commune: 'Cerrillos', cost: 2990 },
   { commune: 'Estación Central', cost: 2490 },
   { commune: 'Recoleta', cost: 2490 },
+  { commune: 'La Pintana', cost: 2990 },
 ]
 
 export const seedDatabase = async (): Promise<void> => {

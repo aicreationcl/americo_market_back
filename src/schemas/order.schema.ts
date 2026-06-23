@@ -47,13 +47,14 @@ export const PlaceOrderSchema = z.object({
 
 export const UpdateOrderStatusSchema = z.object({
   status: z.enum([
-    'pending',
-    'confirmed',
+    'pending_payment',
+    'payment_confirmed',
     'preparing',
-    'on_the_way',
     'ready_for_pickup',
+    'in_transit',
     'delivered',
     'cancelled',
+    'refunded',
   ]),
   note: z.string().optional(),
 })
