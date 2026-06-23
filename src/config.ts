@@ -29,6 +29,14 @@ const envSchema = z
     CORS_ORIGIN: z.string().default('http://localhost:5173'),
 
     FREE_SHIPPING_THRESHOLD: z.coerce.number().default(50000),
+
+    CLOUDINARY_CLOUD_NAME: z.string().optional(),
+    CLOUDINARY_API_KEY: z.string().optional(),
+    CLOUDINARY_API_SECRET: z.string().optional(),
+
+    RESEND_API_KEY: z.string().optional(),
+    FROM_EMAIL: z.string().email().optional().default('noreply@americo.cl'),
+    ADMIN_EMAIL: z.string().email().optional(),
   })
   .refine(
     (data) => data.USE_MEMORY_DB || Boolean(data.MONGODB_URI),
@@ -68,4 +76,10 @@ export const config: Config = result.success
       JWT_REFRESH_EXPIRES_IN: '7d',
       CORS_ORIGIN: 'http://localhost:5173',
       FREE_SHIPPING_THRESHOLD: 50000,
+      CLOUDINARY_CLOUD_NAME: undefined,
+      CLOUDINARY_API_KEY: undefined,
+      CLOUDINARY_API_SECRET: undefined,
+      RESEND_API_KEY: undefined,
+      FROM_EMAIL: 'noreply@americo.cl',
+      ADMIN_EMAIL: undefined,
     }

@@ -4,6 +4,7 @@ import { createOrder } from '../services/order.service'
 import * as cartService from '../services/cart.service'
 import asyncHandler from '../utils/asyncHandler'
 import { ApiError } from '../utils/ApiError'
+import { sendOrderConfirmation, sendNewOrderNotification } from '../services/email.service'
 
 export const placeOrder = asyncHandler(async (req: Request, res: Response) => {
   const { customerData, fulfillmentData, paymentMethod, notes } = req.body
@@ -21,6 +22,12 @@ export const placeOrder = asyncHandler(async (req: Request, res: Response) => {
     paymentMethod,
     notes,
   })
+
+  // Emails no bloquean la respuesta — fallos silenciosos
+  Promise.all([
+    sendOrderConfirmation(order).catch(() => {}),
+    sendNewOrderNotification(order).catch(() => {}),
+  ])
 
   res.status(201).json({
     success: true,

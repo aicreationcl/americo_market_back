@@ -16,3 +16,14 @@ export const UpdateMeSchema = z.object({
   phone: z.string().min(8, 'Teléfono inválido').optional(),
   profileImage: z.string().max(200000, 'Imagen demasiado grande').optional(),
 })
+
+export const AddressSchema = z.object({
+  alias: z.string().min(1).max(50).default('Casa'),
+  street: z.string().min(1, 'Calle requerida'),
+  number: z.string().min(1, 'Número requerido'),
+  commune: z.string().min(1, 'Comuna requerida'),
+  region: z.string().default('Región Metropolitana'),
+  additionalInfo: z.string().max(200).optional(),
+})
+
+export const UpdateAddressSchema = AddressSchema.partial()

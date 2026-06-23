@@ -112,6 +112,67 @@ export const getMe = asyncHandler(async (req: Request, res: Response) => {
   res.json({ success: true, data: user })
 })
 
+export const getAddresses = asyncHandler(async (req: Request, res: Response) => {
+  const user = await User.findById(req.user!.id).select('addresses')
+  res.json({ success: true, data: user?.addresses ?? [] })
+})
+
+export const addAddress = asyncHandler(async (req: Request, res: Response) => {
+  const user = await User.findById(req.user!.id)
+  if (!user) throw new ApiError(404, 'Usuario no encontrado')
+  if (user.addresses.length >= 5) throw new ApiError(400, 'Máximo 5 direcciones permitidas')
+
+  const isFirst = user.addresses.length === 0
+  user.addresses.push({ ...req.body, isDefault: isFirst })
+  await user.save()
+
+  res.status(201).json({ success: true, data: user.addresses })
+})
+
+export const updateAddress = asyncHandler(async (req: Request, res: Response) => {
+  const user = await User.findById(req.user!.id)
+  if (!user) throw new ApiError(404, 'Usuario no encontrado')
+
+  const addr = user.addresses.find((a) => String(a._id) === req.params.addressId)
+  if (!addr) throw new ApiError(404, 'Dirección no encontrada')
+
+  Object.assign(addr, req.body)
+  await user.save()
+
+  res.json({ success: true, data: user.addresses })
+})
+
+export const deleteAddress = asyncHandler(async (req: Request, res: Response) => {
+  const user = await User.findById(req.user!.id)
+  if (!user) throw new ApiError(404, 'Usuario no encontrado')
+
+  const idx = user.addresses.findIndex((a) => String(a._id) === req.params.addressId)
+  if (idx === -1) throw new ApiError(404, 'Dirección no encontrada')
+
+  const wasDefault = user.addresses[idx].isDefault
+  user.addresses.splice(idx, 1)
+  if (wasDefault && user.addresses.length > 0) {
+    user.addresses[0].isDefault = true
+  }
+  await user.save()
+
+  res.json({ success: true, data: user.addresses })
+})
+
+export const setDefaultAddress = asyncHandler(async (req: Request, res: Response) => {
+  const user = await User.findById(req.user!.id)
+  if (!user) throw new ApiError(404, 'Usuario no encontrado')
+
+  const addr = user.addresses.find((a) => String(a._id) === req.params.addressId)
+  if (!addr) throw new ApiError(404, 'Dirección no encontrada')
+
+  user.addresses.forEach((a) => { a.isDefault = false })
+  addr.isDefault = true
+  await user.save()
+
+  res.json({ success: true, data: user.addresses })
+})
+
 export const updateMe = asyncHandler(async (req: Request, res: Response) => {
   const { name, phone, profileImage } = req.body as { name?: string; phone?: string; profileImage?: string }
   const update: Record<string, unknown> = {}

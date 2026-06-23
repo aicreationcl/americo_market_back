@@ -1,7 +1,8 @@
-import mongoose, { Document, Schema, Model } from 'mongoose'
+import mongoose, { Document, Schema, Model, Types } from 'mongoose'
 import bcrypt from 'bcryptjs'
 
 export interface IAddress {
+  _id: Types.ObjectId
   alias: string
   street: string
   number: string

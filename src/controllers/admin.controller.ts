@@ -4,6 +4,8 @@ import Product from '../models/Product'
 import User from '../models/User'
 import asyncHandler from '../utils/asyncHandler'
 import { ApiError } from '../utils/ApiError'
+import { uploadProductImage } from '../services/cloudinary.service'
+import { sendOrderStatusUpdate } from '../services/email.service'
 
 export const getAdminProducts = asyncHandler(async (req: Request, res: Response) => {
   const { search = '', page = '1', limit = '15', status } = req.query as Record<string, string>
@@ -90,6 +92,8 @@ export const updateOrderStatus = asyncHandler(async (req: Request, res: Response
   order.statusHistory.push({ status, changedAt: new Date(), note })
   await order.save()
 
+  sendOrderStatusUpdate(order).catch(() => {})
+
   res.json({ success: true, data: order })
 })
 
@@ -125,6 +129,18 @@ export const getUsers = asyncHandler(async (req: Request, res: Response) => {
       totalPages: Math.ceil(total / parseInt(limit)),
     },
   })
+})
+
+export const uploadImage = asyncHandler(async (req: Request, res: Response) => {
+  if (!req.file) throw new ApiError(400, 'No se recibió ningún archivo')
+
+  const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+  if (!allowedMimeTypes.includes(req.file.mimetype)) {
+    throw new ApiError(400, 'Formato no permitido. Usa JPG, PNG, WebP o GIF.')
+  }
+
+  const result = await uploadProductImage(req.file.buffer, req.file.originalname)
+  res.json({ success: true, data: { url: result.url, publicId: result.publicId } })
 })
 
 export const updateUserRole = asyncHandler(async (req: Request, res: Response) => {
