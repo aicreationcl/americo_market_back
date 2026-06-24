@@ -39,7 +39,7 @@ export const PlaceOrderSchema = z.object({
   customerData: CustomerDataSchema,
   fulfillmentData: FulfillmentDataSchema,
   paymentMethod: z
-    .enum(['cash_on_delivery', 'cash_on_pickup', 'transfer', 'webpay'])
+    .enum(['cash_on_delivery', 'cash_on_pickup', 'webpay', 'mercadopago'])
     .optional()
     .default('cash_on_delivery'),
   notes: z.string().max(500).optional(),

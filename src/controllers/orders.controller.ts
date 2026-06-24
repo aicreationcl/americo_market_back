@@ -23,11 +23,14 @@ export const placeOrder = asyncHandler(async (req: Request, res: Response) => {
     notes,
   })
 
-  // Emails no bloquean la respuesta — fallos silenciosos
-  Promise.all([
-    sendOrderConfirmation(order).catch(() => {}),
-    sendNewOrderNotification(order).catch(() => {}),
-  ])
+  // Para pagos digitales (webpay, mercadopago) los emails se envían en el webhook de confirmación
+  const isDigitalPayment = order.payment.method === 'webpay' || order.payment.method === 'mercadopago'
+  if (!isDigitalPayment) {
+    Promise.all([
+      sendOrderConfirmation(order).catch(() => {}),
+      sendNewOrderNotification(order).catch(() => {}),
+    ])
+  }
 
   res.status(201).json({
     success: true,

@@ -14,6 +14,7 @@ import cartRoutes from './routes/cart.routes'
 import shippingRoutes from './routes/shipping.routes'
 import ordersRoutes from './routes/orders.routes'
 import adminRoutes from './routes/admin.routes'
+import paymentsRoutes from './routes/payments.routes'
 
 export const createApp = (): Application => {
   const app = express()
@@ -47,6 +48,7 @@ export const createApp = (): Application => {
   app.use(`${API_PREFIX}/shipping`, shippingRoutes)
   app.use(`${API_PREFIX}/orders`, ordersRoutes)
   app.use(`${API_PREFIX}/admin`, adminRoutes)
+  app.use(`${API_PREFIX}/payments`, paymentsRoutes)
 
   app.use(errorHandler)
 

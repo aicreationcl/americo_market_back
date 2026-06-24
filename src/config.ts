@@ -37,6 +37,10 @@ const envSchema = z
     RESEND_API_KEY: z.string().optional(),
     FROM_EMAIL: z.string().email().optional().default('noreply@americo.cl'),
     ADMIN_EMAIL: z.string().email().optional(),
+
+    MERCADOPAGO_ACCESS_TOKEN: z.string().optional(),
+    FRONTEND_URL: z.string().url().optional().default('http://localhost:5173'),
+    BACKEND_URL: z.string().url().optional().default('http://localhost:3001'),
   })
   .refine(
     (data) => data.USE_MEMORY_DB || Boolean(data.MONGODB_URI),
@@ -82,4 +86,7 @@ export const config: Config = result.success
       RESEND_API_KEY: undefined,
       FROM_EMAIL: 'noreply@americo.cl',
       ADMIN_EMAIL: undefined,
+      MERCADOPAGO_ACCESS_TOKEN: undefined,
+      FRONTEND_URL: 'http://localhost:5173',
+      BACKEND_URL: 'http://localhost:3001',
     }
