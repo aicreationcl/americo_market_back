@@ -43,7 +43,7 @@ export const createPreference = async (order: IOrder): Promise<MPPreferenceResul
         failure: `${resultUrl}?collection_status=rejected&external_reference=${order.orderNumber}`,
         pending: `${resultUrl}?collection_status=in_process&external_reference=${order.orderNumber}`,
       },
-      // auto_return omitido: MP lo rechaza con URLs localhost; en producción se puede agregar
+      auto_return: 'approved',
       notification_url: webhookUrl,
     },
   })
