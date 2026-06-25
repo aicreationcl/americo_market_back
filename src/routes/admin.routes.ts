@@ -12,6 +12,7 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 *
 router.use(authenticate, isAdmin)
 
 router.get('/dashboard', admin.getDashboard)
+router.get('/analytics', admin.getAnalytics)
 router.get('/products', admin.getAdminProducts)
 router.post('/products/upload-image', upload.single('image'), admin.uploadImage)
 

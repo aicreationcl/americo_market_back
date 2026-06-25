@@ -184,6 +184,59 @@ export const exportOrders = asyncHandler(async (req: Request, res: Response) => 
   res.send('﻿' + header + rows)
 })
 
+export const getAnalytics = asyncHandler(async (_req: Request, res: Response) => {
+  const now = new Date()
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+
+  const [revenueMonthResult, revenueTodayResult, topProductsResult, topCategoriesResult, topCommunesResult] = await Promise.all([
+    Order.aggregate([
+      { $match: { createdAt: { $gte: startOfMonth }, 'payment.status': 'paid' } },
+      { $group: { _id: null, total: { $sum: '$total' } } },
+    ]),
+    Order.aggregate([
+      { $match: { createdAt: { $gte: startOfToday }, 'payment.status': 'paid' } },
+      { $group: { _id: null, total: { $sum: '$total' } } },
+    ]),
+    Order.aggregate([
+      { $unwind: '$items' },
+      { $group: { _id: '$items.name', totalSold: { $sum: '$items.quantity' }, revenue: { $sum: '$items.subtotal' } } },
+      { $sort: { revenue: -1 } },
+      { $limit: 5 },
+      { $project: { _id: 0, name: '$_id', totalSold: 1, revenue: 1 } },
+    ]),
+    Order.aggregate([
+      { $unwind: '$items' },
+      { $lookup: { from: 'products', localField: 'items.product', foreignField: '_id', as: 'prod' } },
+      { $unwind: { path: '$prod', preserveNullAndEmptyArrays: true } },
+      { $lookup: { from: 'categories', localField: 'prod.category', foreignField: '_id', as: 'cat' } },
+      { $unwind: { path: '$cat', preserveNullAndEmptyArrays: true } },
+      { $group: { _id: '$cat.name', revenue: { $sum: '$items.subtotal' }, orderCount: { $sum: 1 } } },
+      { $sort: { revenue: -1 } },
+      { $limit: 5 },
+      { $project: { _id: 0, category: { $ifNull: ['$_id', 'Sin categoría'] }, revenue: 1, orderCount: 1 } },
+    ]),
+    Order.aggregate([
+      { $match: { 'fulfillment.type': 'delivery', 'fulfillment.address.commune': { $exists: true, $ne: '' } } },
+      { $group: { _id: '$fulfillment.address.commune', orderCount: { $sum: 1 } } },
+      { $sort: { orderCount: -1 } },
+      { $limit: 5 },
+      { $project: { _id: 0, commune: '$_id', orderCount: 1 } },
+    ]),
+  ])
+
+  res.json({
+    success: true,
+    data: {
+      revenueToday: revenueTodayResult[0]?.total ?? 0,
+      revenueThisMonth: revenueMonthResult[0]?.total ?? 0,
+      topProducts: topProductsResult,
+      topCategories: topCategoriesResult,
+      topCommunes: topCommunesResult,
+    },
+  })
+})
+
 export const updateUserRole = asyncHandler(async (req: Request, res: Response) => {
   const { role } = req.body as { role: 'customer' | 'admin' }
 
