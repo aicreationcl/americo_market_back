@@ -41,6 +41,10 @@ const envSchema = z
     MERCADOPAGO_ACCESS_TOKEN: z.string().optional(),
     FRONTEND_URL: z.string().url().optional().default('http://localhost:5173'),
     BACKEND_URL: z.string().url().optional().default('http://localhost:3001'),
+
+    WEBPAY_COMMERCE_CODE: z.string().optional(),
+    WEBPAY_API_KEY: z.string().optional(),
+    WEBPAY_ENV: z.enum(['integration', 'production']).optional().default('integration'),
   })
   .refine(
     (data) => data.USE_MEMORY_DB || Boolean(data.MONGODB_URI),
@@ -89,4 +93,7 @@ export const config: Config = result.success
       MERCADOPAGO_ACCESS_TOKEN: undefined,
       FRONTEND_URL: 'http://localhost:5173',
       BACKEND_URL: 'http://localhost:3001',
+      WEBPAY_COMMERCE_CODE: undefined,
+      WEBPAY_API_KEY: undefined,
+      WEBPAY_ENV: 'integration',
     }

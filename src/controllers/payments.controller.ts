@@ -3,7 +3,9 @@ import Order from '../models/Order'
 import asyncHandler from '../utils/asyncHandler'
 import { ApiError } from '../utils/ApiError'
 import { createPreference, getPayment } from '../services/payment/mercadopago.service'
+import { initWebpay, commitWebpay } from '../services/payment/webpay.service'
 import { sendOrderConfirmation, sendNewOrderNotification } from '../services/email.service'
+import { config } from '../config'
 
 // POST /api/v1/payments/mp/init
 export const mpInit = asyncHandler(async (req: Request, res: Response) => {
@@ -69,5 +71,74 @@ export const mpWebhook = asyncHandler(async (req: Request, res: Response) => {
     }
   } catch {
     // Errores en procesamiento post-respuesta no afectan al cliente
+  }
+})
+
+// POST /api/v1/payments/webpay/init
+export const webpayInit = asyncHandler(async (req: Request, res: Response) => {
+  const { orderId } = req.body as { orderId: string }
+  if (!orderId) throw new ApiError(400, 'orderId es requerido')
+
+  const order = await Order.findById(orderId)
+  if (!order) throw new ApiError(404, 'Orden no encontrada')
+  if (order.payment.method !== 'webpay') throw new ApiError(400, 'Esta orden no es de tipo WebPay')
+  if (order.status !== 'pending_payment') throw new ApiError(400, 'La orden ya fue procesada')
+
+  const { token, url } = await initWebpay(order)
+  res.json({ success: true, data: { token, url } })
+})
+
+// POST /api/v1/payments/webpay/confirm — callback de Transbank (form POST con token_ws)
+export const webpayConfirm = asyncHandler(async (req: Request, res: Response) => {
+  const body = req.body as Record<string, string>
+  const tokenWs = body.token_ws
+  const tbkOrderId = body.TBK_ORDEN_COMPRA
+  const frontendUrl = config.FRONTEND_URL
+
+  // Usuario canceló o hubo timeout — Transbank envía TBK_TOKEN en lugar de token_ws
+  if (!tokenWs) {
+    if (tbkOrderId) {
+      const order = await Order.findOne({ orderNumber: tbkOrderId })
+      if (order && order.status === 'pending_payment') {
+        order.status = 'cancelled'
+        order.payment.status = 'failed'
+        order.statusHistory.push({ status: 'cancelled', changedAt: new Date(), note: 'Pago cancelado por el usuario en WebPay' })
+        await order.save()
+      }
+    }
+    const qs = tbkOrderId ? `?status=rejected&orderNumber=${tbkOrderId}` : '?status=rejected'
+    return res.redirect(`${frontendUrl}/pago/resultado${qs}`)
+  }
+
+  try {
+    const result = await commitWebpay(tokenWs)
+    const order = await Order.findOne({ orderNumber: result.orderNumber })
+
+    if (!order) {
+      return res.redirect(`${frontendUrl}/pago/resultado?status=rejected`)
+    }
+
+    if (result.approved) {
+      order.status = 'payment_confirmed'
+      order.payment.status = 'paid'
+      order.payment.transactionId = result.authCode
+      order.payment.paidAt = new Date()
+      order.payment.gatewayResponse = result.gatewayResponse
+      order.statusHistory.push({ status: 'payment_confirmed', changedAt: new Date(), note: 'Pago aprobado por WebPay Plus' })
+      await order.save()
+      Promise.all([
+        sendOrderConfirmation(order).catch(() => {}),
+        sendNewOrderNotification(order).catch(() => {}),
+      ])
+      return res.redirect(`${frontendUrl}/pago/resultado?status=approved&orderNumber=${result.orderNumber}`)
+    } else {
+      order.status = 'cancelled'
+      order.payment.status = 'failed'
+      order.statusHistory.push({ status: 'cancelled', changedAt: new Date(), note: 'Pago rechazado por WebPay Plus' })
+      await order.save()
+      return res.redirect(`${frontendUrl}/pago/resultado?status=rejected&orderNumber=${result.orderNumber}`)
+    }
+  } catch {
+    return res.redirect(`${frontendUrl}/pago/resultado?status=rejected`)
   }
 })
