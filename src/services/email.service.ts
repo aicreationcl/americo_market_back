@@ -180,6 +180,33 @@ const buildNewOrderNotificationEmail = (order: IOrder): string => `
   </body>
 `
 
+const buildPasswordResetEmail = (name: string, resetUrl: string): string => `
+  <body style="${baseStyle}">
+    <div style="${cardStyle}">
+      ${headerHtml}
+      <div style="padding: 28px 32px;">
+        <p style="margin:0 0 4px; font-size:14px; color:#78716c;">¡Hola, ${name}!</p>
+        <h2 style="margin:0 0 12px; font-size:20px; color:#292524; font-weight:700;">Recupera tu contraseña</h2>
+        <p style="margin:0 0 24px; font-size:14px; color:#57534e;">
+          Recibimos una solicitud para restablecer la contraseña de tu cuenta en AMERICO Minimarket.
+          Haz clic en el botón para crear una nueva contraseña.
+        </p>
+        <div style="text-align:center; margin:0 0 24px;">
+          <a href="${resetUrl}"
+             style="display:inline-block; background:#d97706; color:#ffffff; padding:13px 32px; border-radius:8px; font-size:15px; font-weight:700; text-decoration:none; letter-spacing:-0.2px;">
+            Restablecer contraseña
+          </a>
+        </div>
+        <p style="margin:0; font-size:12px; color:#a8a29e; text-align:center; line-height:1.5;">
+          Este enlace expira en 1 hora.<br>
+          Si no solicitaste restablecer tu contraseña, puedes ignorar este correo.
+        </p>
+      </div>
+      ${footerHtml}
+    </div>
+  </body>
+`
+
 const getResendClient = (): Resend | null => {
   if (!config.RESEND_API_KEY) return null
   return new Resend(config.RESEND_API_KEY)
@@ -208,6 +235,18 @@ export const sendOrderStatusUpdate = async (order: IOrder): Promise<void> => {
     to: order.customer.email,
     subject: `${STATUS_LABELS[order.status] ?? 'Actualización'} — Pedido ${order.orderNumber}`,
     html: buildStatusUpdateEmail(order),
+  })
+}
+
+export const sendPasswordResetEmail = async (email: string, name: string, resetUrl: string): Promise<void> => {
+  const resend = getResendClient()
+  if (!resend) return
+
+  await resend.emails.send({
+    from: config.FROM_EMAIL!,
+    to: email,
+    subject: 'Recupera tu contraseña — AMERICO Minimarket',
+    html: buildPasswordResetEmail(name, resetUrl),
   })
 }
 

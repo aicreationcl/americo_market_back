@@ -3,7 +3,7 @@ import rateLimit from 'express-rate-limit'
 import * as auth from '../controllers/auth.controller'
 import { authenticate } from '../middleware/auth.middleware'
 import { validate } from '../middleware/validate.middleware'
-import { RegisterSchema, LoginSchema, UpdateMeSchema, AddressSchema, UpdateAddressSchema } from '../schemas/auth.schema'
+import { RegisterSchema, LoginSchema, UpdateMeSchema, AddressSchema, UpdateAddressSchema, ForgotPasswordSchema, ResetPasswordSchema, ChangePasswordSchema } from '../schemas/auth.schema'
 import { config } from '../config'
 
 const router = Router()
@@ -31,5 +31,9 @@ router.post('/me/addresses', authenticate, validate(AddressSchema), auth.addAddr
 router.patch('/me/addresses/:addressId', authenticate, validate(UpdateAddressSchema), auth.updateAddress)
 router.delete('/me/addresses/:addressId', authenticate, auth.deleteAddress)
 router.patch('/me/addresses/:addressId/default', authenticate, auth.setDefaultAddress)
+
+router.post('/forgot-password', validate(ForgotPasswordSchema), auth.forgotPassword)
+router.post('/reset-password', validate(ResetPasswordSchema), auth.resetPassword)
+router.patch('/me/password', authenticate, validate(ChangePasswordSchema), auth.changePassword)
 
 export default router

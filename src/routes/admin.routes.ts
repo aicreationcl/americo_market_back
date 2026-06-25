@@ -15,6 +15,7 @@ router.get('/dashboard', admin.getDashboard)
 router.get('/products', admin.getAdminProducts)
 router.post('/products/upload-image', upload.single('image'), admin.uploadImage)
 
+router.get('/orders/export', admin.exportOrders)
 router.get('/orders', admin.getAllOrders)
 router.patch('/orders/:id/status', validate(UpdateOrderStatusSchema), admin.updateOrderStatus)
 

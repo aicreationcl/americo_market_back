@@ -143,6 +143,47 @@ export const uploadImage = asyncHandler(async (req: Request, res: Response) => {
   res.json({ success: true, data: { url: result.url, publicId: result.publicId } })
 })
 
+export const exportOrders = asyncHandler(async (req: Request, res: Response) => {
+  const { dateFrom, dateTo, status } = req.query as Record<string, string>
+
+  const filter: Record<string, unknown> = {}
+  if (status) filter.status = status
+  if (dateFrom || dateTo) {
+    const dateFilter: Record<string, Date> = {}
+    if (dateFrom) dateFilter.$gte = new Date(dateFrom)
+    if (dateTo) {
+      const end = new Date(dateTo)
+      end.setHours(23, 59, 59, 999)
+      dateFilter.$lte = end
+    }
+    filter.createdAt = dateFilter
+  }
+
+  const orders = await Order.find(filter).sort({ createdAt: -1 }).limit(5000)
+
+  const escape = (v: string) => `"${String(v ?? '').replace(/"/g, '""')}"`
+  const header = 'Número,Fecha,Cliente,Email,Tipo Entrega,Estado,Método Pago,Total\n'
+  const rows = orders.map((o) => {
+    const date = new Date(o.createdAt).toLocaleDateString('es-CL')
+    const fulfillment = o.fulfillment?.type === 'pickup' ? 'Retiro' : 'Envío'
+    return [
+      o.orderNumber,
+      date,
+      escape(o.customer?.name ?? ''),
+      escape(o.customer?.email ?? ''),
+      fulfillment,
+      o.status,
+      o.payment?.method ?? '',
+      o.total,
+    ].join(',')
+  }).join('\n')
+
+  const today = new Date().toISOString().slice(0, 10)
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8')
+  res.setHeader('Content-Disposition', `attachment; filename="pedidos-AMERICO-${today}.csv"`)
+  res.send('﻿' + header + rows)
+})
+
 export const updateUserRole = asyncHandler(async (req: Request, res: Response) => {
   const { role } = req.body as { role: 'customer' | 'admin' }
 

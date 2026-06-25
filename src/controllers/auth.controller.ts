@@ -1,4 +1,5 @@
 import { Request, Response } from 'express'
+import crypto from 'crypto'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import User from '../models/User'
@@ -6,6 +7,7 @@ import { generateAccessToken, generateRefreshToken } from '../utils/generateToke
 import { ApiError } from '../utils/ApiError'
 import asyncHandler from '../utils/asyncHandler'
 import { config } from '../config'
+import { sendPasswordResetEmail } from '../services/email.service'
 
 const COOKIE_OPTS = {
   httpOnly: true,
@@ -185,4 +187,59 @@ export const updateMe = asyncHandler(async (req: Request, res: Response) => {
     { new: true, runValidators: true }
   ).select('-passwordHash -refreshTokens')
   res.json({ success: true, data: user })
+})
+
+export const forgotPassword = asyncHandler(async (req: Request, res: Response) => {
+  const { email } = req.body as { email: string }
+
+  const user = await User.findOne({ email, isActive: true })
+  if (user) {
+    const rawToken = crypto.randomBytes(32).toString('hex')
+    const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex')
+
+    user.resetPasswordToken = hashedToken
+    user.resetPasswordExpires = new Date(Date.now() + 60 * 60 * 1000)
+    await user.save()
+
+    const frontendUrl = process.env.FRONTEND_URL ?? 'https://americomarketfront-production.up.railway.app'
+    const resetUrl = `${frontendUrl}/restablecer-contrasena?token=${rawToken}`
+    sendPasswordResetEmail(user.email, user.name, resetUrl).catch(() => {})
+  }
+
+  res.json({ success: true, message: 'Si el correo existe en nuestro sistema, recibirás instrucciones en tu bandeja de entrada.' })
+})
+
+export const resetPassword = asyncHandler(async (req: Request, res: Response) => {
+  const { token, newPassword } = req.body as { token: string; newPassword: string }
+
+  const hashedToken = crypto.createHash('sha256').update(token).digest('hex')
+  const user = await User.findOne({
+    resetPasswordToken: hashedToken,
+    resetPasswordExpires: { $gt: new Date() },
+  })
+
+  if (!user) throw new ApiError(400, 'El enlace es inválido o ha expirado')
+
+  user.passwordHash = await bcrypt.hash(newPassword, 10)
+  user.resetPasswordToken = undefined
+  user.resetPasswordExpires = undefined
+  user.refreshTokens = []
+  await user.save()
+
+  res.json({ success: true, message: 'Contraseña actualizada correctamente' })
+})
+
+export const changePassword = asyncHandler(async (req: Request, res: Response) => {
+  const { currentPassword, newPassword } = req.body as { currentPassword: string; newPassword: string }
+
+  const user = await User.findById(req.user!.id)
+  if (!user) throw new ApiError(404, 'Usuario no encontrado')
+
+  const isValid = await user.comparePassword(currentPassword)
+  if (!isValid) throw new ApiError(400, 'La contraseña actual es incorrecta')
+
+  user.passwordHash = await bcrypt.hash(newPassword, 10)
+  await user.save()
+
+  res.json({ success: true, message: 'Contraseña cambiada correctamente' })
 })
