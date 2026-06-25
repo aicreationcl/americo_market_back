@@ -10,6 +10,6 @@ router.post('/mp/webhook', mpWebhook)
 
 // WebPay Plus
 router.post('/webpay/init', optionalAuth, webpayInit)
-router.post('/webpay/confirm', webpayConfirm)
+router.get('/webpay/confirm', webpayConfirm)
 
 export default router

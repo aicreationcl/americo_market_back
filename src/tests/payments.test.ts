@@ -232,7 +232,7 @@ describe('Payments — WebPay confirm', () => {
     wpOrderNumber = res.body.data.orderNumber
   })
 
-  it('POST /api/v1/payments/webpay/confirm — pago aprobado actualiza orden y redirige a approved', async () => {
+  it('GET /api/v1/payments/webpay/confirm — pago aprobado actualiza orden y redirige a approved', async () => {
     ;(commitWebpay as jest.Mock).mockResolvedValue({
       approved: true,
       orderNumber: wpOrderNumber,
@@ -242,9 +242,8 @@ describe('Payments — WebPay confirm', () => {
     })
 
     const res = await request(app)
-      .post('/api/v1/payments/webpay/confirm')
-      .type('form')
-      .send({ token_ws: 'MOCK_TOKEN_WS' })
+      .get('/api/v1/payments/webpay/confirm')
+      .query({ token_ws: 'MOCK_TOKEN_WS' })
 
     expect(res.status).toBe(302)
     expect(res.header.location).toContain('status=approved')
@@ -256,7 +255,7 @@ describe('Payments — WebPay confirm', () => {
     expect(updated?.payment.transactionId).toBe('AUTH123456')
   })
 
-  it('POST /api/v1/payments/webpay/confirm — pago rechazado cancela la orden y redirige a rejected', async () => {
+  it('GET /api/v1/payments/webpay/confirm — pago rechazado cancela la orden y redirige a rejected', async () => {
     ;(commitWebpay as jest.Mock).mockResolvedValue({
       approved: false,
       orderNumber: wpOrderNumber,
@@ -264,9 +263,8 @@ describe('Payments — WebPay confirm', () => {
     })
 
     const res = await request(app)
-      .post('/api/v1/payments/webpay/confirm')
-      .type('form')
-      .send({ token_ws: 'MOCK_TOKEN_WS' })
+      .get('/api/v1/payments/webpay/confirm')
+      .query({ token_ws: 'MOCK_TOKEN_WS' })
 
     expect(res.status).toBe(302)
     expect(res.header.location).toContain('status=rejected')
@@ -276,11 +274,10 @@ describe('Payments — WebPay confirm', () => {
     expect(updated?.payment.status).toBe('failed')
   })
 
-  it('POST /api/v1/payments/webpay/confirm — cancelación (TBK_TOKEN) cancela la orden y redirige a rejected', async () => {
+  it('GET /api/v1/payments/webpay/confirm — cancelación (TBK_TOKEN) cancela la orden y redirige a rejected', async () => {
     const res = await request(app)
-      .post('/api/v1/payments/webpay/confirm')
-      .type('form')
-      .send({ TBK_TOKEN: 'SOME_TBK_TOKEN', TBK_ORDEN_COMPRA: wpOrderNumber, TBK_ID_SESION: wpOrderNumber })
+      .get('/api/v1/payments/webpay/confirm')
+      .query({ TBK_TOKEN: 'SOME_TBK_TOKEN', TBK_ORDEN_COMPRA: wpOrderNumber, TBK_ID_SESION: wpOrderNumber })
 
     expect(res.status).toBe(302)
     expect(res.header.location).toContain('status=rejected')

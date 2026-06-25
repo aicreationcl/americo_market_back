@@ -88,11 +88,11 @@ export const webpayInit = asyncHandler(async (req: Request, res: Response) => {
   res.json({ success: true, data: { token, url } })
 })
 
-// POST /api/v1/payments/webpay/confirm — callback de Transbank (form POST con token_ws)
+// GET /api/v1/payments/webpay/confirm — redirect de Transbank (token_ws en query string)
 export const webpayConfirm = asyncHandler(async (req: Request, res: Response) => {
-  const body = req.body as Record<string, string>
-  const tokenWs = body.token_ws
-  const tbkOrderId = body.TBK_ORDEN_COMPRA
+  const params = req.query as Record<string, string>
+  const tokenWs = params.token_ws
+  const tbkOrderId = params.TBK_ORDEN_COMPRA
   const frontendUrl = config.FRONTEND_URL
 
   // Usuario canceló o hubo timeout — Transbank envía TBK_TOKEN en lugar de token_ws
