@@ -107,6 +107,8 @@ describe('Orders — tracking', () => {
     expect(res.status).toBe(200)
     expect(res.body.data.orderNumber).toBe(orderNumber)
     expect(res.body.data.status).toBe('pending_payment')
+    expect(res.body.data.total).toBe(990 * 3)
+    expect(res.body.data.customer.name).toBe('Juan Pérez')
   })
 
   it('GET /api/v1/orders/track/:orderNumber — 404 for unknown number', async () => {

@@ -56,7 +56,7 @@ export const getOrderById = asyncHandler(async (req: Request, res: Response) => 
 
 export const trackOrder = asyncHandler(async (req: Request, res: Response) => {
   const order = await Order.findOne({ orderNumber: req.params.orderNumber }).select(
-    'orderNumber status fulfillment.type fulfillment.estimatedDate statusHistory items.name items.quantity createdAt'
+    'orderNumber status total customer.name fulfillment.type fulfillment.address fulfillment.estimatedDate statusHistory items.name items.quantity createdAt'
   )
   if (!order) throw new ApiError(404, 'Pedido no encontrado')
   res.json({ success: true, data: order })
